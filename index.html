@@ -439,22 +439,7 @@
   <div class="row2">
     <div class="field">
       <label>cat. 1</label>
-      <select id="cat1" onchange="onCat1Change()">
-        <option value="">—</option>
-        <optgroup label="saídas">
-          <option>Moradia</option><option>Contas do Lar</option><option>Mercado</option>
-          <option>Transporte</option><option>Alimentação</option><option>Udesc</option>
-          <option>Saúde</option><option>Lazer</option><option>Pessoal</option>
-          <option>Presentes</option><option>Academia</option><option>Educação</option>
-          <option>Vestuário</option><option>Viagens</option><option>Assinaturas</option>
-          <option>Pet</option><option>Carro</option><option>Farmácia</option>
-          <option>Outros Gastos</option>
-        </optgroup>
-        <optgroup label="entradas">
-          <option>Renda Ativa</option><option>Renda Passiva</option><option>Renda Extra</option>
-          <option>Apoio Familiar</option><option>Acertos de Contas</option><option>Outras Entradas</option>
-        </optgroup>
-      </select>
+      <select id="cat1" onchange="onCat1Change()"><option value="">—</option></select>
     </div>
     <div class="field">
       <label>cat. 2</label>
@@ -493,13 +478,13 @@
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbw-CLt1QqgIpEIKcWUJiLUjM4vJ5M7-EOAjMowG1OSO7XWo-Z5Sj6y-v6pjucPsx8bo/exec';
 
 const CAT2 = {
-  'Moradia':['Aluguel','Parcela','Móveis','Eletrodomésticos','Obras','Manutenção','Outros'],
-  'Contas do Lar':['Luz','Água','Gás','Internet','Telefone','Taxa de Condomínio','Impostos','Outros'],
+  'Moradia':['Aluguel','Parcela da Casa','Móveis','Eletrodomésticos','Obras','Manutenção','Outros'],
+  'Contas do Lar':['Conta de Luz','Conta de Água','Conta de Gás','Conta de Internet','Conta de Telefone','Taxa de Condomínio','Impostos','Outros'],
   'Mercado':['Supermercado','Açougue','Fruteira','Padaria','Outros'],
   'Transporte':['Ônibus','Uber','Carona','Metrô','Avião','Outros'],
-  'Alimentação':['Estabelecimento','Cafés','Shopping','Ifood','Bares','Lanchonete','Sorveteria','Conveniência','Outros'],
+  'Alimentação':['Estabelecimento','Café','Shopping','Ifood','Bar','Lanchonete','Sorveteria','Conveniência','Outros'],
   'Udesc':['RU','Impressões','Calc','Outros'],
-  'Saúde':['Plano de Saúde','Consulta Médica','Dentista','Cirurgia','Exames','Psicólogo','Serviços','Outros'],
+  'Saúde':['Plano de Saúde','Consulta Médica','Dentista','Cirurgia','Serviços','Exames','Psicólogo','Seguros','Outros'],
   'Lazer':['Cinema','Parque','Teatro','Show','Passeios','Games','Hobby','Amigos','Outros'],
   'Pessoal':['Cabelereiro','Necessidades','Agrados','Eletrônicos','Outros'],
   'Presentes':['Aniversário','Surpresa','Dia dos Namo/Aniver Namoro','Datas Comemorativas','Outros'],
@@ -509,28 +494,45 @@ const CAT2 = {
   'Viagens':['Hospedagem','Transporte','Alimentação','Passeios','Lembranças','Lazer','Outros'],
   'Assinaturas':['Streaming','Revista','Clubes','Boxes','Jogos','Outros'],
   'Pet':['Comida','Banho e Tosa','Vacinas','Hotel','Brinquedos','Acessórios','Outros'],
-  'Carro':['Parcela','Conserto','Acessórios','Combustível','Peças','Manutenção','Aluguel','Seguro','Pedágio','Impostos (IPVA/Taxas)','Multas','Outros'],
+  'Carro':['Parcela do Carro','Conserto','Acessórios','Combustível','Peças','Manutenção','Aluguel','Seguro','Pedágio','Impostos','Multas','Estacionamento','Outros'],
   'Farmácia':['Remédios','Skincare','Higiene','Outros'],
   'Outros Gastos':['Gastos Inesperados','Sem Categoria'],
   'Renda Ativa':['Salário','Pró-Labore','Vale-Transporte','Vale-Alimentação','Férias/13º','Outros'],
   'Renda Passiva':['Dividendos','Juros Renda Fixa','Lucro Ações/FIIs','Aluguel Recebido','Reserva de Emergência','Outros'],
   'Renda Extra':['Freelancer','Cashback','Programas de Pontos','Venda de Itens','Outros'],
-  'Apoio Familiar':['Pai','Vô','Herança','Aniversário','Outros'],
+  'Apoio Familiar':['Pai','Vô','Herança','Presente de Aniversário','Outros'],
   'Acertos de Contas':['Dinheiro Emprestado','Dívida','Gasto Dividido','Outros'],
   'Outras Entradas':['Entradas Inesperadas','Sem Categoria'],
 };
 
+const CAT1_SAIDA = ['Moradia','Contas do Lar','Mercado','Transporte','Alimentação','Udesc','Saúde','Lazer','Pessoal','Presentes','Academia','Educação','Vestuário','Viagens','Assinaturas','Pet','Carro','Farmácia','Outros Gastos'];
+const CAT1_ENTRADA = ['Renda Ativa','Renda Passiva','Renda Extra','Apoio Familiar','Acertos de Contas','Outras Entradas'];
+
 let tipo = 'Saída';
 
-const hoje = new Date();
-document.getElementById('date-pill').textContent = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-document.getElementById('data').value = hoje.toISOString().slice(0,10);
+function preencherCat1() {
+  const sel = document.getElementById('cat1');
+  const valorAtual = sel.value;
+  sel.innerHTML = '<option value="">—</option>';
+  const lista = tipo === 'Saída' ? CAT1_SAIDA : CAT1_ENTRADA;
+  lista.forEach(cat => {
+    const o = document.createElement('option');
+    o.value = cat; o.textContent = cat;
+    sel.appendChild(o);
+  });
+  // restaura seleção se ainda válida
+  if (lista.includes(valorAtual)) sel.value = valorAtual;
+  else {
+    document.getElementById('cat2').innerHTML = '<option value="">—</option>';
+  }
+}
 
 function setTipo(t) {
   tipo = t;
   document.getElementById('btn-saida').className = 'tipo-btn' + (t === 'Saída' ? ' active-saida' : '');
   document.getElementById('btn-entrada').className = 'tipo-btn' + (t === 'Entrada' ? ' active-entrada' : '');
   document.getElementById('btn-enviar').className = 'btn-enviar ' + (t === 'Saída' ? 'saida' : 'entrada');
+  preencherCat1();
   atualizar();
 }
 
@@ -683,7 +685,7 @@ function resetar() {
   document.getElementById('valor').value = '';
   document.getElementById('pagamento').value = '';
   document.getElementById('conta').value = 'Inter';
-  document.getElementById('cat1').value = '';
+  preencherCat1();
   document.getElementById('cat2').innerHTML = '<option value="">—</option>';
   document.getElementById('totparc').value = '1';
   document.getElementById('data').value = new Date().toISOString().slice(0,10);
@@ -701,6 +703,12 @@ function abrirModal() {
 function fecharModal() {
   document.getElementById('modal-overlay').classList.remove('show');
 }
+
+// ── INICIALIZAÇÃO ─────────────────────────────────────────
+const hoje = new Date();
+document.getElementById('date-pill').textContent = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+document.getElementById('data').value = hoje.toISOString().slice(0,10);
+setTipo('Saída');
 
 </script>
 </body>
