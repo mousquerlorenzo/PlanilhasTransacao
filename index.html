@@ -266,6 +266,49 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* MODAL ALERT TEMÁTICO */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 24px;
+    backdrop-filter: blur(4px);
+    opacity: 0; transition: opacity .2s;
+    pointer-events: none;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--entrada-border);
+    border-radius: var(--r);
+    padding: 28px 24px 20px;
+    width: 100%; max-width: 320px;
+    text-align: center;
+    transform: scale(.95); transition: transform .2s;
+  }
+  .modal-overlay.show .modal { transform: scale(1); }
+  .modal-icon { font-size: 32px; margin-bottom: 12px; }
+  .modal-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--text); margin-bottom: 8px;
+    letter-spacing: -.02em;
+  }
+  .modal-msg {
+    font-size: 13px; color: var(--muted2);
+    line-height: 1.6; margin-bottom: 20px;
+    font-family: var(--mono);
+  }
+  .modal-btn {
+    width: 100%; padding: 12px;
+    background: var(--entrada); color: #001a0e;
+    border: none; border-radius: var(--r-sm);
+    font-family: var(--sans); font-size: 14px;
+    font-weight: 700; cursor: pointer;
+    letter-spacing: -.01em;
+    transition: opacity .15s;
+  }
+  .modal-btn:active { opacity: .8; }
+
   /* TOAST */
   .toast {
     position: fixed;
@@ -362,7 +405,7 @@
   <div class="card-label">identificação</div>
   <div class="field">
     <label>descrição</label>
-    <input type="text" id="nome" placeholder="Mercado, Alimentação, salário..." oninput="atualizar()">
+    <input type="text" id="nome" placeholder="ex: mercado, alimentação, salário..." oninput="atualizar()">
   </div>
 </div>
 
@@ -435,6 +478,15 @@
 
 <button class="reset-btn" onclick="resetar()">limpar formulário</button>
 
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-icon">✅</div>
+    <div class="modal-title">Transação lançada!</div>
+    <div class="modal-msg">A transação está lançada<br>no Banco de Dados 👍</div>
+    <button class="modal-btn" onclick="fecharModal()">OK</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -471,7 +523,7 @@ const CAT2 = {
 let tipo = 'Saída';
 
 const hoje = new Date();
-document.getElementById('date-pill').textContent = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+document.getElementById('date-pill').textContent = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 document.getElementById('data').value = hoje.toISOString().slice(0,10);
 
 function setTipo(t) {
@@ -615,7 +667,7 @@ async function enviar() {
 
     if (json.ok) {
       setLoading(false);
-      alert('A transação está lançada no Banco de Dados 👍');
+      abrirModal();
     } else {
       toast('✗ erro: ' + (json.erro || 'tente novamente'), 'err');
       setLoading(false);
@@ -642,6 +694,14 @@ function resetar() {
   setTipo('Saída');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+// ── MODAL ─────────────────────────────────────────────────
+function abrirModal() {
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
 </script>
 </body>
 </html>
