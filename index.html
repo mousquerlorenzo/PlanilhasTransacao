@@ -349,7 +349,7 @@
         <label>conta</label>
         <select id="conta" onchange="atualizar()">
           <option value="">conta...</option>
-          <option>Inter</option>
+          <option selected>Inter</option>
           <option>Nubank</option>
           <option>C6 Bank</option>
         </select>
@@ -362,7 +362,7 @@
   <div class="card-label">identificação</div>
   <div class="field">
     <label>descrição</label>
-    <input type="text" id="nome" placeholder="ex: Mercado Bistek, Uber, salário..." oninput="atualizar()">
+    <input type="text" id="nome" placeholder="Mercado, Alimentação, salário..." oninput="atualizar()">
   </div>
 </div>
 
@@ -383,16 +383,10 @@
     </div>
     <div id="parcelas-wrap" style="display:none;">
       <div class="parcela-info" id="parcela-info" style="margin-bottom:10px;"></div>
-      <div class="row2">
-        <div class="field">
-          <label>nº parcela</label>
-          <input type="number" id="nparc" min="1" value="1" inputmode="numeric" oninput="atualizar()">
-        </div>
-        <div class="field">
-          <label>total parc.</label>
+      <div class="field">
+          <label>total de parcelas</label>
           <input type="number" id="totparc" min="1" value="1" inputmode="numeric" oninput="atualizar()">
         </div>
-      </div>
     </div>
   </div>
 </div>
@@ -477,7 +471,7 @@ const CAT2 = {
 let tipo = 'Saída';
 
 const hoje = new Date();
-document.getElementById('date-pill').textContent = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.','');
+document.getElementById('date-pill').textContent = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 document.getElementById('data').value = hoje.toISOString().slice(0,10);
 
 function setTipo(t) {
@@ -532,7 +526,7 @@ function atualizar() {
   const conta   = document.getElementById('conta').value;
   const cat1    = document.getElementById('cat1').value;
   const cat2    = document.getElementById('cat2').value;
-  const nparc   = parseInt(document.getElementById('nparc').value) || 1;
+  const nparc   = 1;
   const totparc = parseInt(document.getElementById('totparc').value) || 1;
   const dp      = calcDP();
   const isCredito = pag === 'Crédito';
@@ -595,7 +589,7 @@ async function enviar() {
   const conta   = document.getElementById('conta').value;
   const cat1    = document.getElementById('cat1').value;
   const cat2    = document.getElementById('cat2').value || '';
-  const nparc   = parseInt(document.getElementById('nparc').value) || 1;
+  const nparc   = 1;
   const totparc = parseInt(document.getElementById('totparc').value) || 1;
   const dp      = calcDP();
 
@@ -620,8 +614,8 @@ async function enviar() {
     const json = await res.json();
 
     if (json.ok) {
-      toast('✓ lançado na planilha!', 'ok');
-      setTimeout(() => resetar(), 1200);
+      setLoading(false);
+      alert('A transação está lançada no Banco de Dados 👍');
     } else {
       toast('✗ erro: ' + (json.erro || 'tente novamente'), 'err');
       setLoading(false);
@@ -633,11 +627,12 @@ async function enviar() {
 }
 
 function resetar() {
-  ['nome','valor','pagamento','conta','cat1'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  document.getElementById('nome').value = '';
+  document.getElementById('valor').value = '';
+  document.getElementById('pagamento').value = '';
+  document.getElementById('conta').value = 'Inter';
+  document.getElementById('cat1').value = '';
   document.getElementById('cat2').innerHTML = '<option value="">—</option>';
-  document.getElementById('nparc').value = '1';
   document.getElementById('totparc').value = '1';
   document.getElementById('data').value = new Date().toISOString().slice(0,10);
   document.getElementById('parcelas-wrap').style.display = 'none';
