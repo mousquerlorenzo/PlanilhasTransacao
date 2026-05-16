@@ -46,8 +46,10 @@
     color: var(--text);
     min-height: 100%;
     padding: calc(var(--sat) + 1rem) 16px calc(var(--sab) + 2rem);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
     max-width: 430px;
-    margin: 0 auto;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -353,10 +355,173 @@
     border: none;
     font-family: var(--sans);
   }
+
+  /* APP CONTAINER & TABS */
+  .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+
+  .tab-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 16px calc(var(--sab) + 8px);
+    gap: 8px;
+    z-index: 100;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    border-radius: var(--r-sm);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted2);
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: -.01em;
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .swipe-container {
+    display: flex;
+    width: 200%;
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    flex: 1;
+  }
+
+  .swipe-container.show-hist { transform: translateX(-50%); }
+
+  .aba {
+    width: 50%;
+    min-width: 50%;
+    padding: calc(var(--sat) + 1rem) 16px calc(var(--sab) + 5rem);
+    box-sizing: border-box;
+  }
+
+  /* HISTÓRICO */
+  .hist-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0 20px;
+  }
+
+  .hist-title {
+    font-size: 22px; font-weight: 700;
+    letter-spacing: -.03em; color: var(--text);
+  }
+
+  .hist-refresh {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 7px 12px;
+    font-family: var(--sans); font-size: 12px; font-weight: 600;
+    color: var(--muted2); cursor: pointer;
+    transition: all .15s;
+  }
+
+  .hist-refresh:active { opacity: .7; }
+  .hist-refresh.loading svg { animation: spin .7s linear infinite; }
+
+  .hist-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .hist-card-top {
+    display: flex; align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .hist-tipo {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 15px;
+  }
+
+  .hist-tipo.saida { background: var(--saida-dim); color: var(--saida); }
+  .hist-tipo.entrada { background: var(--entrada-dim); color: var(--entrada); }
+
+  .hist-info { flex: 1; min-width: 0; }
+
+  .hist-nome {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .hist-meta {
+    font-size: 11px; color: var(--muted2); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .hist-valor {
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .hist-valor.saida { color: var(--saida); }
+  .hist-valor.entrada { color: var(--entrada); }
+
+  .hist-footer {
+    padding: 6px 14px 10px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+
+  .hist-tag {
+    font-size: 10px; padding: 3px 8px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 20px; color: var(--muted2);
+    font-family: var(--mono);
+  }
+
+  .hist-empty {
+    text-align: center; padding: 3rem 1rem;
+    font-size: 13px; color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .hist-error {
+    background: var(--saida-dim); border: 1px solid var(--saida-border);
+    border-radius: var(--r); padding: 14px 16px;
+    font-size: 13px; color: var(--saida); line-height: 1.5;
+  }
+
 </style>
 </head>
 <body>
 
+<div class="app-container">
+<!-- TABS NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" id="tab-btn-form" onclick="mudarAba('form')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+    lançar
+  </button>
+  <button class="tab-btn" id="tab-btn-hist" onclick="mudarAba('hist')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    histórico
+  </button>
+</div>
+
+<!-- SWIPE CONTAINER -->
+<div class="swipe-container" id="swipe-container">
+
+<!-- ABA FORMULÁRIO -->
+<div class="aba" id="aba-form">
 <div class="header">
   <div class="header-left">
     <div class="eyebrow">google sheets</div>
@@ -710,6 +875,96 @@ document.getElementById('date-pill').textContent = hoje.toLocaleDateString('pt-B
 document.getElementById('data').value = hoje.toISOString().slice(0,10);
 setTipo('Saída');
 
+// ── ABAS & SWIPE ──────────────────────────────────────────
+let abaAtual = 'form';
+
+function mudarAba(aba) {
+  abaAtual = aba;
+  document.getElementById('tab-btn-form').classList.toggle('active', aba === 'form');
+  document.getElementById('tab-btn-hist').classList.toggle('active', aba === 'hist');
+  document.getElementById('swipe-container').classList.toggle('show-hist', aba === 'hist');
+  if (aba === 'hist') carregarHistorico();
+}
+
+// swipe touch
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) < 50) return;
+  if (dx < 0 && abaAtual === 'form') mudarAba('hist');
+  else if (dx > 0 && abaAtual === 'hist') mudarAba('form');
+}, { passive: true });
+
+// ── HISTÓRICO ─────────────────────────────────────────────
+async function carregarHistorico() {
+  const btn = document.getElementById('btn-refresh');
+  const content = document.getElementById('hist-content');
+  btn.classList.add('loading');
+  content.innerHTML = '<div class="hist-empty">carregando...</div>';
+
+  try {
+    const res = await fetch(SHEETS_URL + '?n=10', { method: 'GET' });
+    const json = await res.json();
+
+    if (!json.ok) throw new Error(json.erro || 'erro desconhecido');
+    if (!json.transacoes || json.transacoes.length === 0) {
+      content.innerHTML = '<div class="hist-empty">nenhuma transação encontrada</div>';
+      return;
+    }
+
+    content.innerHTML = json.transacoes.map(t => {
+      const isSaida = t.tipo === 'Saída';
+      const sinal   = isSaida ? '- ' : '+ ';
+      const cls     = isSaida ? 'saida' : 'entrada';
+      const icone   = isSaida ? '↑' : '↓';
+      const val     = parseFloat(t.valor) || 0;
+      const valFmt  = 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const cat     = t.cat1 + (t.cat2 ? ' › ' + t.cat2 : '');
+      const parcela = t.parcela && t.parcela !== 'À vista' ? t.parcela : '';
+
+      return `<div class="hist-card">
+        <div class="hist-card-top">
+          <div class="hist-tipo ${cls}">${icone}</div>
+          <div class="hist-info">
+            <div class="hist-nome">${t.nome || '—'}</div>
+            <div class="hist-meta">${t.dataParcela} · ${t.pagamento} · ${t.conta}</div>
+          </div>
+          <div class="hist-valor ${cls}">${sinal}${valFmt}</div>
+        </div>
+        <div class="hist-footer">
+          <span class="hist-tag">${cat}</span>
+          ${parcela ? '<span class="hist-tag">parcela ' + parcela + '</span>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(err) {
+    content.innerHTML = '<div class="hist-error">erro ao carregar: ' + err.message + '<br><br>Verifique se o Apps Script está implantado com acesso "Qualquer pessoa".</div>';
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
 </script>
+</div><!-- /aba-form -->
+
+<!-- ABA HISTÓRICO -->
+<div class="aba" id="aba-hist">
+  <div class="hist-header">
+    <div class="hist-title">últimas transações</div>
+    <button class="hist-refresh" onclick="carregarHistorico()" id="btn-refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      atualizar
+    </button>
+  </div>
+  <div id="hist-content">
+    <div class="hist-empty">toque em atualizar para carregar</div>
+  </div>
+</div><!-- /aba-hist -->
+
+</div><!-- /swipe-container -->
+</div><!-- /app-container -->
+
 </body>
 </html>
