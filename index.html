@@ -499,10 +499,19 @@ async function loadHist(){
 }
 
 function fmtDate(s){
-  // converte dd/MM/yyyy ou yyyy-MM-dd para dd/MM/yyyy
   if(!s) return '—';
+  // ISO datetime: 2026-01-01T03:00:00.000Z
+  if(s.includes('T')){
+    const d=new Date(s);
+    const dd=String(d.getUTCDate()).padStart(2,'0');
+    const mm=String(d.getUTCMonth()+1).padStart(2,'0');
+    const yy=d.getUTCFullYear();
+    return dd+'/'+mm+'/'+yy;
+  }
+  // yyyy-MM-dd
   if(s.includes('-')){const[y,m,d]=s.split('-');return d+'/'+m+'/'+y;}
-  return s; // já está no formato correto
+  // já dd/MM/yyyy
+  return s;
 }
 
 function renderHist(txs){
@@ -569,7 +578,7 @@ function renderHist(txs){
       <div class="txrow">
         <div class="txleft">
           <div class="txnm">${g.nome||'—'}</div>
-          <div class="txdt">${dataShow}</div>
+          <div class="txdt">${dataShow} · ${isGrp?'Crédito':g.pagamento}</div>
         </div>
         <div class="txright">
           <div class="txvl ${cls}">${sig}${fmtR(valShow)}</div>
