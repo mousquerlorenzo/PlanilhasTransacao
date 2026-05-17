@@ -499,14 +499,26 @@ async function loadHist(){
 }
 
 function fmtDate(s){
-  if(!s||s==='—') return '—';
-  var str=String(s);
-  // ISO com timezone: pega só a parte da data antes do T
-  if(str.indexOf('T')!==-1) str=str.split('T')[0];
+  if(!s) return '—';
+  var str=String(s).trim();
+  // já no formato dd/MM/yyyy
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
+  // ISO com timezone: 2026-01-01T03:00:00.000Z — pega só antes do T
+  if(str.indexOf('T')!==-1) str=str.split('T')[0].trim();
   // yyyy-MM-dd
-  if(str.indexOf('-')!==-1&&str.length===10){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str)){
     var p=str.split('-');return p[2]+'/'+p[1]+'/'+p[0];
   }
+  // fallback: tenta parsear como Date e formatar
+  try{
+    var d=new Date(str);
+    if(!isNaN(d.getTime())){
+      var dd=String(d.getUTCDate()).padStart(2,'0');
+      var mm=String(d.getUTCMonth()+1).padStart(2,'0');
+      var yy=d.getUTCFullYear();
+      return dd+'/'+mm+'/'+yy;
+    }
+  }catch(e){}
   return str;
 }
 
