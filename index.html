@@ -492,127 +492,65 @@ async function loadHist(){
       document.getElementById('hcont').innerHTML='<div class="hemp">nenhuma transação encontrada</div>';
       return;
     }
-    renderHist(sanitizeTxDates(j.transacoes));
+    renderHist(j.transacoes);
   }catch(e){
     document.getElementById('hcont').innerHTML=`<div class="herr">erro: ${e.message}<br><br>Confirme que o Apps Script está com acesso "Qualquer pessoa".</div>`;
   }finally{btn.classList.remove('ld');}
 }
 
-function fmtDate(s){
-  if(!s) return '—';
-  var str=String(s).trim();
-  // já no formato dd/MM/yyyy
-  if(/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
-  // ISO com timezone: 2026-01-01T03:00:00.000Z — pega só antes do T
-  if(str.indexOf('T')!==-1) str=str.split('T')[0].trim();
-  // yyyy-MM-dd
-  if(/^\d{4}-\d{2}-\d{2}$/.test(str)){
-    var p=str.split('-');return p[2]+'/'+p[1]+'/'+p[0];
-  }
-  // fallback: tenta parsear como Date e formatar
-  try{
-    var d=new Date(str);
-    if(!isNaN(d.getTime())){
-      var dd=String(d.getUTCDate()).padStart(2,'0');
-      var mm=String(d.getUTCMonth()+1).padStart(2,'0');
-      var yy=d.getUTCFullYear();
-      return dd+'/'+mm+'/'+yy;
-    }
-  }catch(e){}
-  return str;
-}
-
-function sanitizeTxDates(txs){
-  return txs.map(function(t){
-    var tt=Object.assign({},t,{
-      dataCompra:  fmtDate(t.dataCompra),
-      dataParcela: fmtDate(t.dataParcela),
-    });
-    if(t.parcelas){
-      tt.parcelas=t.parcelas.map(function(p){
-        return Object.assign({},p,{
-          dataCompra:  fmtDate(p.dataCompra),
-          dataParcela: fmtDate(p.dataParcela),
-        });
-      });
-    }
-    return tt;
-  });
-}
+// datas já chegam formatadas do Apps Script como dd/MM/yyyy
+function fmtDate(s){ return s||'—'; }
 
 function renderHist(txs){
-  // agrupar parcelas crédito
-  const grupos=[], visto=new Map();
-  txs.forEach(t=>{
-    const parcelada=t.pagamento==='Crédito'&&t.parcela&&t.parcela!=='À vista';
-    if(!parcelada){grupos.push({single:true,...t});return;}
-    const key=t.nome+'|'+t.dataCompra+'|'+t.cat1;
-    if(visto.has(key)){
-      const g=visto.get(key);
-      g.parcelas.push(t);
-      g.valorTotal+=parseFloat(t.valor)||0;
-    } else {
-      const g={single:false,key,...t,valorTotal:parseFloat(t.valor)||0,parcelas:[t]};
-      visto.set(key,g);grupos.push(g);
-    }
-  });
-
-  document.getElementById('hcont').innerHTML=grupos.map((g,i)=>{
-    const s=g.tipo==='Saída',cls=s?'s':'e',sig=s?'- ':'+ ';
-    const isGrp=!g.single&&g.parcelas&&g.parcelas.length>1;
-    const valShow=isGrp?g.valorTotal:(parseFloat(g.valor)||0);
-    const dataShow=fmtDate(isGrp?g.dataCompra:g.dataCompra);
+  document.getElementById('hcont').innerHTML=txs.map(function(g,i){
+    var s=g.tipo==='Saída', cls=s?'s':'e', sig=s?'- ':'+ ';
+    var isGrp=!!g.agrupado&&g.parcelas&&g.parcelas.length>1;
+    var valShow=isGrp?g.valorTotal:(parseFloat(g.valor)||0);
+    var cat=g.cat1+(g.cat2?' › '+g.cat2:'');
 
     // valor parcela mais frequente
-    let vpFmt='';
+    var vpFmt='';
     if(isGrp){
-      const freq={};
-      g.parcelas.forEach(p=>{const v=(parseFloat(p.valor)||0).toFixed(2);freq[v]=(freq[v]||0)+1;});
-      vpFmt=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+      var freq={};
+      g.parcelas.forEach(function(p){var v=(parseFloat(p.valor)||0).toFixed(2);freq[v]=(freq[v]||0)+1;});
+      vpFmt=Object.entries(freq).sort(function(a,b){return b[1]-a[1];})[0][0];
     }
 
-    const cat=g.cat1+(g.cat2?' › '+g.cat2:'');
-
-    // detalhes: para crédito parcelado mostra resumo + parcelas; senão mostra info básica
-    let detInner='';
-    detInner+=`<div class="detrow"><span class="detk">categoria</span><span class="detv">${cat}</span></div>`;
-    detInner+=`<div class="detrow"><span class="detk">conta</span><span class="detv">${g.conta}</span></div>`;
-    detInner+=`<div class="detrow"><span class="detk">data compra</span><span class="detv">${fmtDate(g.dataCompra)}</span></div>`;
+    var detInner='';
+    detInner+='<div class="detrow"><span class="detk">categoria</span><span class="detv">'+cat+'</span></div>';
+    detInner+='<div class="detrow"><span class="detk">conta</span><span class="detv">'+g.conta+'</span></div>';
+    detInner+='<div class="detrow"><span class="detk">data compra</span><span class="detv">'+g.dataCompra+'</span></div>';
 
     if(isGrp){
-      detInner+=`<div class="detrow"><span class="detk">pagamento</span><span class="detv">Crédito</span></div>`;
-      detInner+=`<div class="detrow"><span class="detk">parcelamento</span><span class="detv">${g.parcelas.length}x de ${fmtR(vpFmt)}</span></div>`;
-      detInner+=`<div class="detrow"><span class="detk">valor total</span><span class="detv">${fmtR(valShow)}</span></div>`;
-      // subtarefas parcelas
-      detInner+=`<div class="parcblock">
-        <div class="parcblock-ttl">parcelas</div>
-        ${g.parcelas.map(p=>`<div class="parcr">
-          <span class="parcn">${p.parcela}</span>
-          <span class="parcd">${fmtDate(p.dataParcela)}</span>
-          <span class="parcv">${fmtR(p.valor)}</span>
-        </div>`).join('')}
-      </div>`;
+      detInner+='<div class="detrow"><span class="detk">pagamento</span><span class="detv">Crédito</span></div>';
+      detInner+='<div class="detrow"><span class="detk">parcelamento</span><span class="detv">'+g.parcelas.length+'x de '+fmtR(vpFmt)+'</span></div>';
+      detInner+='<div class="detrow"><span class="detk">valor total</span><span class="detv">'+fmtR(valShow)+'</span></div>';
+      detInner+='<div class="parcblock"><div class="parcblock-ttl">parcelas</div>';
+      g.parcelas.forEach(function(p){
+        detInner+='<div class="parcr"><span class="parcn">'+p.parcela+'</span><span class="parcd">'+p.dataParcela+'</span><span class="parcv">'+fmtR(p.valor)+'</span></div>';
+      });
+      detInner+='</div>';
     } else {
-      detInner+=`<div class="detrow"><span class="detk">pagamento</span><span class="detv">${g.pagamento}</span></div>`;
+      detInner+='<div class="detrow"><span class="detk">pagamento</span><span class="detv">'+g.pagamento+'</span></div>';
       if(g.parcela&&g.parcela!=='À vista'){
-        detInner+=`<div class="detrow"><span class="detk">parcela</span><span class="detv">${g.parcela}</span></div>`;
+        detInner+='<div class="detrow"><span class="detk">parcela</span><span class="detv">'+g.parcela+'</span></div>';
       }
-      detInner+=`<div class="detrow"><span class="detk">data parcela</span><span class="detv">${fmtDate(g.dataParcela)}</span></div>`;
+      detInner+='<div class="detrow"><span class="detk">data parcela</span><span class="detv">'+g.dataParcela+'</span></div>';
     }
 
-    return `<div class="txc" onclick="togTx(${i})">
-      <div class="txrow">
-        <div class="txleft">
-          <div class="txnm">${g.nome||'—'}</div>
-          <div class="txdt">${dataShow} · ${isGrp?'Crédito':g.pagamento}</div>
-        </div>
-        <div class="txright">
-          <div class="txvl ${cls}">${sig}${fmtR(valShow)}</div>
-          <svg class="txarr" id="arr${i}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      <div class="txdet" id="det${i}">${detInner}</div>
-    </div>`;
+    return '<div class="txc" onclick="togTx('+i+')">'
+      +'<div class="txrow">'
+        +'<div class="txleft">'
+          +'<div class="txnm">'+(g.nome||'—')+'</div>'
+          +'<div class="txdt">'+g.dataCompra+' · '+(isGrp?'Crédito':g.pagamento)+'</div>'
+        +'</div>'
+        +'<div class="txright">'
+          +'<div class="txvl '+cls+'">'+sig+fmtR(valShow)+'</div>'
+          +'<svg class="txarr" id="arr'+i+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+        +'</div>'
+      +'</div>'
+      +'<div class="txdet" id="det'+i+'">'+detInner+'</div>'
+    +'</div>';
   }).join('');
 }
 
