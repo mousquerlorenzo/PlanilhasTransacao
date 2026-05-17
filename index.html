@@ -492,26 +492,40 @@ async function loadHist(){
       document.getElementById('hcont').innerHTML='<div class="hemp">nenhuma transação encontrada</div>';
       return;
     }
-    renderHist(j.transacoes);
+    renderHist(sanitizeTxDates(j.transacoes));
   }catch(e){
     document.getElementById('hcont').innerHTML=`<div class="herr">erro: ${e.message}<br><br>Confirme que o Apps Script está com acesso "Qualquer pessoa".</div>`;
   }finally{btn.classList.remove('ld');}
 }
 
 function fmtDate(s){
-  if(!s) return '—';
-  // ISO datetime: 2026-01-01T03:00:00.000Z
-  if(s.includes('T')){
-    const d=new Date(s);
-    const dd=String(d.getUTCDate()).padStart(2,'0');
-    const mm=String(d.getUTCMonth()+1).padStart(2,'0');
-    const yy=d.getUTCFullYear();
-    return dd+'/'+mm+'/'+yy;
-  }
+  if(!s||s==='—') return '—';
+  var str=String(s);
+  // ISO com timezone: pega só a parte da data antes do T
+  if(str.indexOf('T')!==-1) str=str.split('T')[0];
   // yyyy-MM-dd
-  if(s.includes('-')){const[y,m,d]=s.split('-');return d+'/'+m+'/'+y;}
-  // já dd/MM/yyyy
-  return s;
+  if(str.indexOf('-')!==-1&&str.length===10){
+    var p=str.split('-');return p[2]+'/'+p[1]+'/'+p[0];
+  }
+  return str;
+}
+
+function sanitizeTxDates(txs){
+  return txs.map(function(t){
+    var tt=Object.assign({},t,{
+      dataCompra:  fmtDate(t.dataCompra),
+      dataParcela: fmtDate(t.dataParcela),
+    });
+    if(t.parcelas){
+      tt.parcelas=t.parcelas.map(function(p){
+        return Object.assign({},p,{
+          dataCompra:  fmtDate(p.dataCompra),
+          dataParcela: fmtDate(p.dataParcela),
+        });
+      });
+    }
+    return tt;
+  });
 }
 
 function renderHist(txs){
