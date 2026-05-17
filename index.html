@@ -154,33 +154,34 @@ select option{background:var(--surf2);}
 .hrefr svg{width:14px;height:14px;}
 .hrefr.ld svg{animation:spin .7s linear infinite;}
 
-.txc{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
-.txm{display:flex;align-items:center;gap:10px;padding:12px 14px;}
-.txico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0;}
-.txico.s{background:var(--red-d);color:var(--red);}
-.txico.e{background:var(--grn-d);color:var(--grn);}
-.txinf{flex:1;min-width:0;}
+.txc{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);margin-bottom:8px;overflow:hidden;cursor:pointer;}
+.txrow{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;gap:10px;}
+.txleft{flex:1;min-width:0;}
 .txnm{font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.txmt{font-size:11px;color:var(--mu2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.txrt{text-align:right;flex-shrink:0;}
+.txdt{font-size:11px;color:var(--mu2);margin-top:3px;font-family:var(--mono);}
+.txright{text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px;}
 .txvl{font-family:var(--mono);font-size:13px;font-weight:600;}
 .txvl.s{color:var(--red);}
 .txvl.e{color:var(--grn);}
-.txpb{font-family:var(--mono);font-size:10px;color:var(--mu2);margin-top:3px;}
-.txgs{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 10px;}
-.txg{font-size:10px;font-family:var(--mono);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:20px;color:var(--mu2);}
+.txarr{width:14px;height:14px;flex-shrink:0;color:var(--mu);transition:transform .2s;}
+.txarr.open{transform:rotate(180deg);}
 
-.togg{display:flex;align-items:center;gap:7px;padding:8px 14px;border-top:1px solid var(--brd);border-bottom:none;border-left:none;border-right:none;background:none;width:100%;font-family:var(--mono);font-size:11px;color:var(--mu2);cursor:pointer;text-align:left;}
-.togg svg{width:13px;height:13px;transition:transform .2s;flex-shrink:0;}
-.togg.open svg{transform:rotate(180deg);}
-.parcs{display:none;border-top:1px solid var(--brd);}
-.parcs.open{display:block;}
-.parcr{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 9px 46px;border-bottom:1px solid var(--brd);font-size:12px;}
+/* detalhes expandidos */
+.txdet{display:none;border-top:1px solid var(--brd);padding:12px 14px;background:var(--surf2);}
+.txdet.open{display:block;}
+.detrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--brd);font-size:12px;}
+.detrow:last-child{border-bottom:none;}
+.detk{color:var(--mu2);font-weight:500;}
+.detv{color:var(--txt);font-weight:600;font-family:var(--mono);font-size:11px;text-align:right;}
+
+/* parcelas subtarefa */
+.parcblock{margin-top:10px;border:1px solid var(--brd);border-radius:var(--rsm);overflow:hidden;}
+.parcblock-ttl{font-family:var(--mono);font-size:10px;color:var(--mu);letter-spacing:.08em;text-transform:uppercase;padding:7px 10px;background:var(--surf3);border-bottom:1px solid var(--brd);}
+.parcr{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--brd);font-size:12px;}
 .parcr:last-child{border-bottom:none;}
 .parcn{font-family:var(--mono);color:var(--mu2);min-width:38px;}
-.parcd{color:var(--mu2);flex:1;}
+.parcd{color:var(--mu2);flex:1;font-family:var(--mono);}
 .parcv{font-family:var(--mono);font-weight:600;color:var(--txt);}
-.parchead{font-size:10px!important;padding-bottom:4px!important;}
 
 .hemp{text-align:center;padding:3rem 1rem;font-size:13px;color:var(--mu);font-family:var(--mono);}
 .herr{background:var(--red-d);border:1px solid var(--red-b);border-radius:var(--r);padding:14px;font-size:12px;color:var(--red);line-height:1.6;font-family:var(--mono);}
@@ -497,75 +498,94 @@ async function loadHist(){
   }finally{btn.classList.remove('ld');}
 }
 
+function fmtDate(s){
+  // converte dd/MM/yyyy ou yyyy-MM-dd para dd/MM/yyyy
+  if(!s) return '—';
+  if(s.includes('-')){const[y,m,d]=s.split('-');return d+'/'+m+'/'+y;}
+  return s; // já está no formato correto
+}
+
 function renderHist(txs){
-  // Agrupar parcelas de crédito: key = nome|dataCompra|cat1
+  // agrupar parcelas crédito
   const grupos=[], visto=new Map();
   txs.forEach(t=>{
     const parcelada=t.pagamento==='Crédito'&&t.parcela&&t.parcela!=='À vista';
     if(!parcelada){grupos.push({single:true,...t});return;}
-    const key=`${t.nome}|${t.dataCompra}|${t.cat1}`;
+    const key=t.nome+'|'+t.dataCompra+'|'+t.cat1;
     if(visto.has(key)){
       const g=visto.get(key);
       g.parcelas.push(t);
       g.valorTotal+=parseFloat(t.valor)||0;
     } else {
       const g={single:false,key,...t,valorTotal:parseFloat(t.valor)||0,parcelas:[t]};
-      visto.set(key,g); grupos.push(g);
+      visto.set(key,g);grupos.push(g);
     }
   });
 
   document.getElementById('hcont').innerHTML=grupos.map((g,i)=>{
-    const s=g.tipo==='Saída', cls=s?'s':'e', sig=s?'- ':'+ ';
-    const cat=g.cat1+(g.cat2?' › '+g.cat2:'');
+    const s=g.tipo==='Saída',cls=s?'s':'e',sig=s?'- ':'+ ';
     const isGrp=!g.single&&g.parcelas&&g.parcelas.length>1;
     const valShow=isGrp?g.valorTotal:(parseFloat(g.valor)||0);
+    const dataShow=fmtDate(isGrp?g.dataCompra:g.dataCompra);
 
-    let badge='';
+    // valor parcela mais frequente
+    let vpFmt='';
     if(isGrp){
-      // valor parcela mais frequente
       const freq={};
       g.parcelas.forEach(p=>{const v=(parseFloat(p.valor)||0).toFixed(2);freq[v]=(freq[v]||0)+1;});
-      const vp=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
-      badge=`<div class="txpb">${g.parcelas.length}x de ${fmtR(vp)}</div>`;
-    } else if(g.parcela&&g.parcela!=='À vista'){
-      badge=`<div class="txpb">parc. ${g.parcela}</div>`;
+      vpFmt=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
     }
 
-    const parcsHtml=isGrp?`
-      <button class="togg" id="tog${i}" onclick="togParc(${i})">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        <span id="togLbl${i}">ver ${g.parcelas.length} parcelas</span>
-      </button>
-      <div class="parcs" id="parc${i}">
-        <div class="parcr parchead"><span class="parcn" style="color:var(--mu);font-size:10px;">parc.</span><span class="parcd" style="color:var(--mu);font-size:10px;">vencimento</span><span class="parcv" style="color:var(--mu);font-size:10px;">valor</span></div>
-        ${g.parcelas.map(p=>`<div class="parcr"><span class="parcn">${p.parcela}</span><span class="parcd">${p.dataParcela}</span><span class="parcv">${fmtR(p.valor)}</span></div>`).join('')}
-      </div>` : '';
+    const cat=g.cat1+(g.cat2?' › '+g.cat2:'');
 
-    return `<div class="txc">
-      <div class="txm">
-        <div class="txico ${cls}">${s?'↑':'↓'}</div>
-        <div class="txinf">
+    // detalhes: para crédito parcelado mostra resumo + parcelas; senão mostra info básica
+    let detInner='';
+    detInner+=`<div class="detrow"><span class="detk">categoria</span><span class="detv">${cat}</span></div>`;
+    detInner+=`<div class="detrow"><span class="detk">conta</span><span class="detv">${g.conta}</span></div>`;
+    detInner+=`<div class="detrow"><span class="detk">data compra</span><span class="detv">${fmtDate(g.dataCompra)}</span></div>`;
+
+    if(isGrp){
+      detInner+=`<div class="detrow"><span class="detk">pagamento</span><span class="detv">Crédito</span></div>`;
+      detInner+=`<div class="detrow"><span class="detk">parcelamento</span><span class="detv">${g.parcelas.length}x de ${fmtR(vpFmt)}</span></div>`;
+      detInner+=`<div class="detrow"><span class="detk">valor total</span><span class="detv">${fmtR(valShow)}</span></div>`;
+      // subtarefas parcelas
+      detInner+=`<div class="parcblock">
+        <div class="parcblock-ttl">parcelas</div>
+        ${g.parcelas.map(p=>`<div class="parcr">
+          <span class="parcn">${p.parcela}</span>
+          <span class="parcd">${fmtDate(p.dataParcela)}</span>
+          <span class="parcv">${fmtR(p.valor)}</span>
+        </div>`).join('')}
+      </div>`;
+    } else {
+      detInner+=`<div class="detrow"><span class="detk">pagamento</span><span class="detv">${g.pagamento}</span></div>`;
+      if(g.parcela&&g.parcela!=='À vista'){
+        detInner+=`<div class="detrow"><span class="detk">parcela</span><span class="detv">${g.parcela}</span></div>`;
+      }
+      detInner+=`<div class="detrow"><span class="detk">data parcela</span><span class="detv">${fmtDate(g.dataParcela)}</span></div>`;
+    }
+
+    return `<div class="txc" onclick="togTx(${i})">
+      <div class="txrow">
+        <div class="txleft">
           <div class="txnm">${g.nome||'—'}</div>
-          <div class="txmt">${g.dataCompra} · ${g.pagamento} · ${g.conta}</div>
+          <div class="txdt">${dataShow}</div>
         </div>
-        <div class="txrt">
+        <div class="txright">
           <div class="txvl ${cls}">${sig}${fmtR(valShow)}</div>
-          ${badge}
+          <svg class="txarr" id="arr${i}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
-      <div class="txgs"><span class="txg">${cat}</span></div>
-      ${parcsHtml}
+      <div class="txdet" id="det${i}">${detInner}</div>
     </div>`;
   }).join('');
 }
 
-function togParc(i){
-  const tog=document.getElementById('tog'+i);
-  const wrap=document.getElementById('parc'+i);
-  const open=wrap.classList.toggle('open');
-  tog.classList.toggle('open',open);
-  const n=wrap.querySelectorAll('.parcr:not(.parchead)').length;
-  document.getElementById('togLbl'+i).textContent=open?'fechar parcelas':`ver ${n} parcelas`;
+function togTx(i){
+  const det=document.getElementById('det'+i);
+  const arr=document.getElementById('arr'+i);
+  const open=det.classList.toggle('open');
+  arr.classList.toggle('open',open);
 }
 
 // init
